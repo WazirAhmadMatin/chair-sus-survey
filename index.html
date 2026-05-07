@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chair SUS Survey / 椅子アンケート</title>
 
-<!-- ============================================================
-  SETUP: Paste your Google Apps Script Web App URL below.
-  See README instructions to create it (takes ~3 minutes).
-  ============================================================ -->
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzRZ3l10zYbiBuqDUqASmxC5aYSVtmLDqrYKhkhc7Gvb1ueWtBWhdsbXmiw-q1gyuo/exec';
 </script>
@@ -244,19 +240,36 @@ function resetSurvey(){
 
 function setLoading(on,msg=''){const el=document.getElementById('loading');el.style.display=on?'flex':'none';if(msg)document.getElementById('loading-msg').textContent=msg;}
 
-async function loadAdmin(){
+// ── JSONP loader — bypasses CORS completely ──────────────────
+function loadAdmin(){
   document.getElementById('admin-body').innerHTML='<div class="empty"><div class="spinner" style="margin:0 auto 1rem"></div><p>Loading from Google Sheets...</p></div>';
-  setLoading(true,'Loading results...');
-  try{
-    const r=await fetch(SCRIPT_URL+'?action=read');
-    const data=await r.json();
+
+  // Remove any previous JSONP script tag
+  const old=document.getElementById('jsonp-script');
+  if(old)old.remove();
+
+  // Set a timeout in case the script never calls back
+  const timer=setTimeout(()=>{
+    document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Make sure the Apps Script is deployed as a Web App with access set to <strong>Anyone</strong>.</p></div>`;
+  },10000);
+
+  // Global callback that Google Apps Script will call
+  window.__susCallback=function(data){
+    clearTimeout(timer);
     sheetUrl=data.sheetUrl||'';
-    if(sheetUrl){const b=document.getElementById('sheet-link-btn');b.style.display='inline';}
-    setLoading(false);renderAdmin(data.responses||[]);
-  }catch(e){
-    setLoading(false);
-    document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Check that SCRIPT_URL is set correctly in the HTML file.</p></div>`;
-  }
+    if(sheetUrl){document.getElementById('sheet-link-btn').style.display='inline';}
+    renderAdmin(data.responses||[]);
+  };
+
+  // Inject script tag — Google Apps Script must support ?callback= param
+  const s=document.createElement('script');
+  s.id='jsonp-script';
+  s.src=SCRIPT_URL+'?action=read&callback=__susCallback';
+  s.onerror=()=>{
+    clearTimeout(timer);
+    document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Make sure the Apps Script is deployed as a Web App with access set to <strong>Anyone</strong>.</p></div>`;
+  };
+  document.body.appendChild(s);
 }
 
 function openSheet(){if(sheetUrl)window.open(sheetUrl,'_blank');}
