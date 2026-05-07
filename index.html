@@ -4,11 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chair SUS Survey / 椅子アンケート</title>
-
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxjSmtE0W3ndWKfP54ItsWNj1xY2zAXa92JVVwZZ4842a1GleQqc7LF002hfRkLTmU/exec';
 </script>
-
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -207,21 +205,47 @@ function pick(qid,val){
 
 function calcSUS(a){let t=0;QS.forEach(q=>{const v=a[q.id]||3;t+=q.pos?(v-1):(5-v);});return Math.round(t*2.5);}
 
+// ── JSONP helper ─────────────────────────────────────────────
+function jsonp(url, callbackName, timeout) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), timeout || 10000);
+    window[callbackName] = (data) => { clearTimeout(timer); resolve(data); };
+    const s = document.createElement('script');
+    s.src = url;
+    s.onerror = () => { clearTimeout(timer); reject(new Error('script error')); };
+    document.body.appendChild(s);
+  });
+}
+
+// ── SUBMIT via JSONP GET (no POST, no CORS problem) ──────────
 async function submitSurvey(){
-  if(Object.keys(ans).length<10){document.getElementById('err-msg').style.display='block';document.getElementById('q-container').scrollIntoView({behavior:'smooth'});return;}
-  const score=calcSUS(ans);
+  if(Object.keys(ans).length<10){
+    document.getElementById('err-msg').style.display='block';
+    document.getElementById('q-container').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const score = calcSUS(ans);
   setLoading(true,'Saving your response...');
-  const payload=new URLSearchParams();
-  payload.append('score',score);
-  payload.append('open',document.getElementById('open-ans').value.trim());
-  QS.forEach(q=>payload.append('q'+q.id,ans[q.id]||''));
-  try{await fetch(SCRIPT_URL,{method:'POST',body:payload,mode:'no-cors'});}catch(e){}
+
+  const params = new URLSearchParams();
+  params.append('action','submit');
+  params.append('score', score);
+  params.append('open', document.getElementById('open-ans').value.trim());
+  QS.forEach(q => params.append('q'+q.id, ans[q.id]||''));
+  params.append('callback','__submitCb');
+
+  try {
+    await jsonp(SCRIPT_URL + '?' + params.toString(), '__submitCb', 10000);
+  } catch(e) { /* silent — show score anyway */ }
+
   setLoading(false);
-  const g=GRADE(score);
-  document.getElementById('t-score').textContent=score;
-  const gEl=document.getElementById('t-grade');gEl.textContent=g.e+' '+g.l+' / '+g.jp;gEl.className='grade-pill '+g.cls;
-  const msgs={Excellent:"Excellent! Top marks for ergonomic comfort.",Good:"Good score! Works well with minor areas to improve.",OK:"Acceptable, but notable comfort issues worth addressing.",Poor:"Needs significant redesign to meet ergonomic standards."};
-  document.getElementById('t-msg').textContent=msgs[g.l];
+  const g = GRADE(score);
+  document.getElementById('t-score').textContent = score;
+  const gEl = document.getElementById('t-grade');
+  gEl.textContent = g.e+' '+g.l+' / '+g.jp;
+  gEl.className = 'grade-pill '+g.cls;
+  const msgs = {Excellent:"Excellent! Top marks for ergonomic comfort.",Good:"Good score! Works well with minor areas to improve.",OK:"Acceptable, but notable comfort issues worth addressing.",Poor:"Needs significant redesign to meet ergonomic standards."};
+  document.getElementById('t-msg').textContent = msgs[g.l];
   document.getElementById('form-content').style.display='none';
   document.getElementById('thanks-content').style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -240,42 +264,23 @@ function resetSurvey(){
 
 function setLoading(on,msg=''){const el=document.getElementById('loading');el.style.display=on?'flex':'none';if(msg)document.getElementById('loading-msg').textContent=msg;}
 
-// ── JSONP loader — bypasses CORS completely ──────────────────
-function loadAdmin(){
+// ── LOAD ADMIN via JSONP ─────────────────────────────────────
+async function loadAdmin(){
   document.getElementById('admin-body').innerHTML='<div class="empty"><div class="spinner" style="margin:0 auto 1rem"></div><p>Loading from Google Sheets...</p></div>';
-
-  // Remove any previous JSONP script tag
-  const old=document.getElementById('jsonp-script');
-  if(old)old.remove();
-
-  // Set a timeout in case the script never calls back
-  const timer=setTimeout(()=>{
+  try {
+    const data = await jsonp(SCRIPT_URL+'?action=read&callback=__readCb', '__readCb', 10000);
+    sheetUrl = data.sheetUrl || '';
+    if(sheetUrl) document.getElementById('sheet-link-btn').style.display='inline';
+    renderAdmin(data.responses || []);
+  } catch(e) {
     document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Make sure the Apps Script is deployed as a Web App with access set to <strong>Anyone</strong>.</p></div>`;
-  },10000);
-
-  // Global callback that Google Apps Script will call
-  window.__susCallback=function(data){
-    clearTimeout(timer);
-    sheetUrl=data.sheetUrl||'';
-    if(sheetUrl){document.getElementById('sheet-link-btn').style.display='inline';}
-    renderAdmin(data.responses||[]);
-  };
-
-  // Inject script tag — Google Apps Script must support ?callback= param
-  const s=document.createElement('script');
-  s.id='jsonp-script';
-  s.src=SCRIPT_URL+'?action=read&callback=__susCallback';
-  s.onerror=()=>{
-    clearTimeout(timer);
-    document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Make sure the Apps Script is deployed as a Web App with access set to <strong>Anyone</strong>.</p></div>`;
-  };
-  document.body.appendChild(s);
+  }
 }
 
 function openSheet(){if(sheetUrl)window.open(sheetUrl,'_blank');}
 
 function renderAdmin(rs){
-  if(!rs.length){document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:2.5rem">📋</p><p style="margin-top:1rem;font-weight:500">No responses yet.</p><p style="font-size:.82rem;margin-top:.4rem">Share the survey URL with your 16 classmates!</p></div>`;return;}
+  if(!rs.length){document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:2.5rem">📋</p><p style="margin-top:1rem;font-weight:500">No responses yet.</p><p style="font-size:.82rem;margin-top:.4rem">Share the survey URL with your classmates!</p></div>`;return;}
   const scores=rs.map(r=>r.score);
   const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
   const min=Math.min(...scores),max=Math.max(...scores);
