@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chair SUS Survey / 椅子アンケート</title>
+
+<!-- ============================================================
+  SETUP: Paste your Google Apps Script Web App URL below.
+  See README instructions to create it (takes ~3 minutes).
+  ============================================================ -->
+<script>
+  const SCRIPT_URL = 'https://script.google.com/macros/library/d/1yqVBgOBZ79_3cewXE7WWSoKXC_tomp6sw1bL76_gKFMK37XNx11D_Hqa/1'; // ← replace this
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#FDF8F2;--card:#fff;--accent:#D85A30;--accent2:#1D9E75;--text:#2C2C2A;--muted:#888780;--border:#D3D1C7;--scale-bg:#F1EFE8}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:var(--text);padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem;position:sticky;top:0;z-index:100}
+.header-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:#FDF8F2;letter-spacing:-.02em}
+.header-sub{font-size:.75rem;color:#B4B2A9}
+.hbtn{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;padding:.45rem 1.1rem;border-radius:999px;border:none;cursor:pointer;transition:.2s}
+.hbtn-green{background:var(--accent2);color:#fff}.hbtn-green:hover{background:#0F6E56}
+.hbtn-red{background:var(--accent);color:#fff}.hbtn-red:hover{background:#993C1D}
+.view{display:none}.view.active{display:block}
+.survey-wrap{max-width:620px;margin:0 auto;padding:2rem 1.5rem}
+.intro-card{background:var(--accent);color:#fff;border-radius:20px;padding:2rem;margin-bottom:2rem;position:relative;overflow:hidden}
+.intro-card::after{content:'🪑';position:absolute;right:1.5rem;bottom:-1rem;font-size:5rem;opacity:.15}
+.intro-card h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1.1;margin-bottom:.6rem}
+.intro-card p{font-size:.88rem;opacity:.88;line-height:1.65;max-width:380px}
+.prog-wrap{margin-bottom:1.5rem}
+.prog-label{font-size:.75rem;color:var(--muted);margin-bottom:.4rem;display:flex;justify-content:space-between}
+.prog-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .4s ease}
+.q-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:.8rem;transition:border-color .2s}
+.q-card.answered{border-color:var(--accent2)}
+.q-cat{font-size:.65rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent2);margin-bottom:.3rem}
+.q-scenario{font-size:.75rem;color:var(--muted);font-style:italic;margin-bottom:.4rem}
+.q-text{font-size:.95rem;font-weight:500;line-height:1.5;margin-bottom:.25rem}
+.q-jp{font-size:.8rem;color:var(--muted);margin-bottom:1.1rem}
+.scale-wrap{display:flex;align-items:center;gap:6px}
+.scale-end{font-size:.65rem;color:var(--muted);text-align:center;line-height:1.3;flex:0 0 48px}
+.scale-btns{display:flex;gap:6px;flex:1}
+.sbtn{flex:1;aspect-ratio:1;border:1.5px solid var(--border);background:var(--scale-bg);border-radius:10px;font-size:.88rem;font-weight:500;cursor:pointer;transition:.15s;color:var(--text);font-family:'DM Sans',sans-serif}
+.sbtn:hover{border-color:var(--accent);background:#FAECE7;transform:translateY(-1px)}
+.sbtn.sel{background:var(--accent);border-color:var(--accent);color:#fff;transform:translateY(-2px);box-shadow:0 4px 12px rgba(216,90,48,.3)}
+.open-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem}
+.open-card label{font-size:.88rem;font-weight:500;display:block;margin-bottom:.3rem}
+.open-card .sub{font-size:.78rem;color:var(--muted);margin-bottom:.8rem;font-style:italic}
+textarea{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:.9rem;font-family:'DM Sans',sans-serif;font-size:.85rem;resize:vertical;min-height:90px;background:var(--scale-bg);color:var(--text);transition:border-color .2s}
+textarea:focus{outline:none;border-color:var(--accent2)}
+.submit-btn{width:100%;padding:1.1rem;background:var(--text);color:var(--bg);font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;border:none;border-radius:14px;cursor:pointer;transition:.2s;letter-spacing:.03em}
+.submit-btn:hover:not(:disabled){background:#444;transform:translateY(-1px)}
+.submit-btn:disabled{background:var(--border);cursor:not-allowed;color:var(--muted)}
+.err{color:var(--accent);font-size:.82rem;text-align:center;padding:.6rem;display:none}
+.loading-overlay{position:fixed;inset:0;background:rgba(253,248,242,.92);display:none;align-items:center;justify-content:center;z-index:999;flex-direction:column;gap:1rem}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.thanks-wrap{max-width:480px;margin:0 auto;padding:4rem 2rem;text-align:center}
+.thanks-score{font-family:'Syne',sans-serif;font-size:6rem;font-weight:800;line-height:1;margin:1rem 0}
+.grade-pill{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.4rem;border-radius:999px;font-weight:500;font-size:1rem;margin:.8rem 0 1.2rem}
+.g-excellent{background:#EAF3DE;color:#3B6D11}.g-good{background:#E6F1FB;color:#185FA5}.g-ok{background:#FAEEDA;color:#854F0B}.g-poor{background:#FCEBEB;color:#A32D2D}
+.thanks-msg{font-size:.9rem;color:var(--muted);line-height:1.7;max-width:340px;margin:0 auto}
+.again-btn{margin-top:2rem;padding:.7rem 1.8rem;border:1.5px solid var(--border);border-radius:999px;background:transparent;cursor:pointer;font-size:.85rem;font-family:'DM Sans',sans-serif;transition:.2s}
+.again-btn:hover{border-color:var(--text);background:var(--text);color:var(--bg)}
+.admin-wrap{max-width:920px;margin:0 auto;padding:2rem 1.5rem}
+.admin-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+.admin-title{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:800}
+.admin-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+.action-btn{padding:.45rem 1rem;border:1px solid var(--border);border-radius:999px;background:transparent;cursor:pointer;font-size:.78rem;font-family:'DM Sans',sans-serif;color:var(--muted);transition:.2s}
+.action-btn:hover{border-color:var(--text);color:var(--text)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:1.5rem}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem}
+.stat-l{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.3rem}
+.stat-v{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;line-height:1}
+.stat-s{font-size:.7rem;color:var(--muted);margin-top:.2rem}
+.sec-title{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:.5rem;margin:1.5rem 0 .8rem}
+.score-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.5rem}
+.chip{font-size:.75rem;padding:.3rem .75rem;border-radius:999px;font-weight:500}
+.q-bar{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.6rem}
+.q-bar-top{display:flex;align-items:center;gap:.8rem;margin-bottom:.6rem}
+.q-tag{font-size:.68rem;font-weight:700;color:var(--accent2);background:#E1F5EE;padding:.2rem .5rem;border-radius:4px;flex-shrink:0}
+.q-bar-text{font-size:.8rem;color:var(--muted);flex:1;line-height:1.3}
+.q-avg-num{font-family:'Syne',sans-serif;font-size:1.15rem;font-weight:800;flex-shrink:0}
+.track{height:6px;background:var(--scale-bg);border-radius:3px;overflow:hidden;margin-bottom:.5rem}
+.fill{height:100%;background:var(--accent2);border-radius:3px;transition:width .7s ease}
+.dist{display:flex;gap:4px}
+.dc{flex:1;text-align:center}
+.dbw{height:44px;display:flex;align-items:flex-end}
+.db{width:100%;border-radius:3px 3px 0 0;min-height:3px}
+.db-pos{background:var(--accent2)}.db-neg{background:#E24B4A}.db-mid{background:#B4B2A9}
+.dl{font-size:.63rem;color:var(--muted);margin-top:2px}
+.open-resp{background:var(--scale-bg);border-radius:8px;padding:.8rem 1rem;font-size:.82rem;color:#5F5E5A;margin-bottom:.4rem;line-height:1.5;border-left:3px solid var(--accent2)}
+.empty{text-align:center;padding:5rem 2rem;color:var(--muted)}
+.band-legend{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem}
+.band{font-size:.72rem;padding:.25rem .7rem;border-radius:6px;font-weight:500}
+.live-dot{display:inline-block;width:8px;height:8px;background:#1D9E75;border-radius:50%;margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">椅子アンケート — Chair SUS</div>
+    <div class="header-sub">System Usability Scale · Brooke (1996)</div>
+  </div>
+  <div style="display:flex;gap:.5rem">
+    <button class="hbtn hbtn-green" onclick="showView('survey')">📋 Take Survey</button>
+    <button class="hbtn hbtn-red" onclick="showView('admin')">📊 Results</button>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:.88rem;color:var(--muted)" id="loading-msg">Saving your response...</div>
+</div>
+
+<!-- SURVEY VIEW -->
+<div class="view active" id="view-survey">
+  <div class="survey-wrap">
+    <div id="form-content">
+      <div class="intro-card">
+        <h1>How was your chair?</h1>
+        <p>10 quick questions about your sitting experience. Takes ~2 minutes.<br>椅子についての10の質問です。約2分で回答できます。</p>
+      </div>
+      <div class="prog-wrap">
+        <div class="prog-label"><span id="prog-text">0 of 10 answered</span><span id="prog-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div id="q-container"></div>
+      <div class="open-card">
+        <label>What would you change about this chair?</label>
+        <div class="sub">この椅子について改善してほしい点は何ですか？ (optional / 任意)</div>
+        <textarea id="open-ans" placeholder="Write your thoughts here..."></textarea>
+      </div>
+      <div class="err" id="err-msg">⚠ Please answer all 10 questions. / 全10問にお答えください。</div>
+      <button class="submit-btn" onclick="submitSurvey()">Submit Survey / 送信する →</button>
+    </div>
+    <div id="thanks-content" style="display:none">
+      <div class="thanks-wrap">
+        <div style="font-family:'Syne',sans-serif;font-size:.85rem;font-weight:700;color:var(--muted);letter-spacing:.1em">YOUR SUS SCORE</div>
+        <div class="thanks-score" id="t-score">—</div>
+        <div class="grade-pill" id="t-grade">—</div>
+        <p class="thanks-msg" id="t-msg"></p>
+        <button class="again-btn" onclick="resetSurvey()">Take again / もう一度 ↺</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN VIEW -->
+<div class="view" id="view-admin">
+  <div class="admin-wrap">
+    <div class="admin-top">
+      <div>
+        <div class="admin-title">Results Dashboard</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:.3rem"><span class="live-dot"></span>Live data from Google Sheets</div>
+      </div>
+      <div class="admin-actions">
+        <button class="action-btn" onclick="loadAdmin()">↺ Refresh</button>
+        <button class="action-btn" id="sheet-link-btn" onclick="openSheet()" style="display:none">Open Google Sheet ↗</button>
+      </div>
+    </div>
+    <div id="admin-body"></div>
+  </div>
+</div>
+
+<script>
+const QS=[
+  {id:1,cat:"Comfort",text:"I found this chair comfortable to sit in for long periods.",jp:"長時間座っていても快適に感じた。",pos:true,sc:"Imagine you just finished a 2-hour meeting..."},
+  {id:2,cat:"Adjustability",text:"I found the chair unnecessarily difficult to adjust.",jp:"椅子の調整が不必要に難しいと感じた。",pos:false,sc:"Think about the first time you tried to adjust the height or backrest..."},
+  {id:3,cat:"Adjustability",text:"I felt the seat height was well-suited to my body.",jp:"座面の高さは自分の体に合っていると感じた。",pos:true,sc:"Consider how your feet and knees felt while seated..."},
+  {id:4,cat:"Comfort",text:"I found the backrest support to be lacking.",jp:"背もたれのサポートが不十分だと感じた。",pos:false,sc:"Recall how your lower back felt after sitting for a while..."},
+  {id:5,cat:"Confidence",text:"I would feel confident using this chair for an entire workday.",jp:"この椅子を一日中使い続けることに問題はないと思う。",pos:true,sc:"Picture yourself using this chair from 9am to 5pm..."},
+  {id:6,cat:"Adjustability",text:"There was too much inconsistency in how adjustable parts worked.",jp:"椅子の調整部分の動作にばらつきが多すぎると感じた。",pos:false,sc:"Think about levers, knobs, or wheels on the chair..."},
+  {id:7,cat:"Confidence",text:"I imagine most people would adjust to this chair very quickly.",jp:"ほとんどの人がこの椅子にすぐ慣れられると思う。",pos:true,sc:"Consider a new colleague sitting in this chair for the first time..."},
+  {id:8,cat:"Comfort",text:"I found the chair very awkward to get into a good position.",jp:"椅子に正しい姿勢で座るのが非常に難しいと感じた。",pos:false,sc:"Remember trying to find your ideal sitting posture..."},
+  {id:9,cat:"Comfort",text:"I felt very comfortable sitting in this chair.",jp:"この椅子に座っていてとても快適だと感じた。",pos:true,sc:"Overall, think about how your body felt while seated..."},
+  {id:10,cat:"Confidence",text:"I would need a lot of time before getting comfortable with this chair.",jp:"この椅子に慣れるまでに多くの時間が必要だと感じた。",pos:false,sc:"Think about your learning curve with this chair..."},
+];
+const GRADE=s=>s>=85?{l:'Excellent',jp:'優秀',cls:'g-excellent',e:'⭐'}:s>=71?{l:'Good',jp:'良好',cls:'g-good',e:'👍'}:s>=51?{l:'OK',jp:'普通',cls:'g-ok',e:'🙂'}:{l:'Poor',jp:'要改善',cls:'g-poor',e:'⚠️'};
+let ans={}, sheetUrl='';
+
+function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));document.getElementById('view-'+v).classList.add('active');if(v==='admin')loadAdmin();}
+window.onload=()=>{buildSurvey();if(new URLSearchParams(location.search).get('admin')==='true')showView('admin');};
+
+function buildSurvey(){
+  const c=document.getElementById('q-container');c.innerHTML='';
+  QS.forEach(q=>{const d=document.createElement('div');d.className='q-card';d.id='qcard-'+q.id;
+    d.innerHTML=`<div class="q-cat">${q.cat}</div><div class="q-scenario">${q.sc}</div><div class="q-text">${q.text}</div><div class="q-jp">${q.jp}</div>
+    <div class="scale-wrap"><div class="scale-end">1<br><small>Strongly<br>Disagree</small></div>
+    <div class="scale-btns">${[1,2,3,4,5].map(v=>`<button class="sbtn" id="sb-${q.id}-${v}" onclick="pick(${q.id},${v})">${v}</button>`).join('')}</div>
+    <div class="scale-end">5<br><small>Strongly<br>Agree</small></div></div>`;c.appendChild(d);});
+}
+
+function pick(qid,val){
+  ans[qid]=val;
+  [1,2,3,4,5].forEach(v=>document.getElementById(`sb-${qid}-${v}`)?.classList.toggle('sel',v===val));
+  document.getElementById('qcard-'+qid).classList.add('answered');
+  const n=Object.keys(ans).length,pct=Math.round(n/10*100);
+  document.getElementById('prog-fill').style.width=pct+'%';
+  document.getElementById('prog-text').textContent=`${n} of 10 answered`;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  document.getElementById('err-msg').style.display='none';
+}
+
+function calcSUS(a){let t=0;QS.forEach(q=>{const v=a[q.id]||3;t+=q.pos?(v-1):(5-v);});return Math.round(t*2.5);}
+
+async function submitSurvey(){
+  if(Object.keys(ans).length<10){document.getElementById('err-msg').style.display='block';document.getElementById('q-container').scrollIntoView({behavior:'smooth'});return;}
+  const score=calcSUS(ans);
+  setLoading(true,'Saving your response...');
+  const payload=new URLSearchParams();
+  payload.append('score',score);
+  payload.append('open',document.getElementById('open-ans').value.trim());
+  QS.forEach(q=>payload.append('q'+q.id,ans[q.id]||''));
+  try{await fetch(SCRIPT_URL,{method:'POST',body:payload,mode:'no-cors'});}catch(e){}
+  setLoading(false);
+  const g=GRADE(score);
+  document.getElementById('t-score').textContent=score;
+  const gEl=document.getElementById('t-grade');gEl.textContent=g.e+' '+g.l+' / '+g.jp;gEl.className='grade-pill '+g.cls;
+  const msgs={Excellent:"Excellent! Top marks for ergonomic comfort.",Good:"Good score! Works well with minor areas to improve.",OK:"Acceptable, but notable comfort issues worth addressing.",Poor:"Needs significant redesign to meet ergonomic standards."};
+  document.getElementById('t-msg').textContent=msgs[g.l];
+  document.getElementById('form-content').style.display='none';
+  document.getElementById('thanks-content').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function resetSurvey(){
+  ans={};document.getElementById('open-ans').value='';
+  document.getElementById('form-content').style.display='block';
+  document.getElementById('thanks-content').style.display='none';
+  buildSurvey();
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('prog-text').textContent='0 of 10 answered';
+  document.getElementById('prog-pct').textContent='0%';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function setLoading(on,msg=''){const el=document.getElementById('loading');el.style.display=on?'flex':'none';if(msg)document.getElementById('loading-msg').textContent=msg;}
+
+async function loadAdmin(){
+  document.getElementById('admin-body').innerHTML='<div class="empty"><div class="spinner" style="margin:0 auto 1rem"></div><p>Loading from Google Sheets...</p></div>';
+  setLoading(true,'Loading results...');
+  try{
+    const r=await fetch(SCRIPT_URL+'?action=read');
+    const data=await r.json();
+    sheetUrl=data.sheetUrl||'';
+    if(sheetUrl){const b=document.getElementById('sheet-link-btn');b.style.display='inline';}
+    setLoading(false);renderAdmin(data.responses||[]);
+  }catch(e){
+    setLoading(false);
+    document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:1.5rem">⚠️</p><p style="margin-top:1rem;font-weight:500">Could not load results.</p><p style="margin-top:.5rem;font-size:.8rem">Check that SCRIPT_URL is set correctly in the HTML file.</p></div>`;
+  }
+}
+
+function openSheet(){if(sheetUrl)window.open(sheetUrl,'_blank');}
+
+function renderAdmin(rs){
+  if(!rs.length){document.getElementById('admin-body').innerHTML=`<div class="empty"><p style="font-size:2.5rem">📋</p><p style="margin-top:1rem;font-weight:500">No responses yet.</p><p style="font-size:.82rem;margin-top:.4rem">Share the survey URL with your 16 classmates!</p></div>`;return;}
+  const scores=rs.map(r=>r.score);
+  const avg=Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+  const min=Math.min(...scores),max=Math.max(...scores);
+  const med=[...scores].sort((a,b)=>a-b)[Math.floor(scores.length/2)];
+  const g=GRADE(avg);
+  const chips=rs.map((r,i)=>{const gr=GRADE(r.score);const col={Excellent:'color:#3B6D11;background:#EAF3DE',Good:'color:#185FA5;background:#E6F1FB',OK:'color:#854F0B;background:#FAEEDA',Poor:'color:#A32D2D;background:#FCEBEB'}[gr.l];return`<span class="chip" style="${col}">#${i+1}: ${r.score}</span>`;}).join('');
+  const qBars=QS.map(q=>{
+    const vals=rs.map(r=>Number(r['q'+q.id])||3);
+    const qa=vals.reduce((a,v)=>a+v,0)/vals.length;
+    const dist=[1,2,3,4,5].map(v=>vals.filter(x=>x===v).length);
+    const md=Math.max(...dist,1);
+    const bars=dist.map((cnt,i)=>{const h=Math.round((cnt/md)*40);const cls=i<2?'db-neg':i===2?'db-mid':'db-pos';return`<div class="dc"><div class="dbw"><div class="db ${cls}" style="height:${h}px"></div></div><div class="dl">${i+1}<br>(${cnt})</div></div>`;}).join('');
+    return`<div class="q-bar"><div class="q-bar-top"><span class="q-tag">Q${q.id}</span><span class="q-bar-text">${q.text}</span><span class="q-avg-num">${qa.toFixed(1)}</span></div><div class="track"><div class="fill" style="width:${Math.round(qa/5*100)}%"></div></div><div class="dist">${bars}</div></div>`;
+  }).join('');
+  const opens=rs.filter(r=>r.open).map(r=>`<div class="open-resp">"${r.open}"</div>`).join('');
+  document.getElementById('admin-body').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-l">Responses</div><div class="stat-v">${rs.length}</div><div class="stat-s">of 16 expected</div></div>
+      <div class="stat"><div class="stat-l">Average SUS</div><div class="stat-v">${avg}</div><div class="stat-s">${g.l} — ${g.jp}</div></div>
+      <div class="stat"><div class="stat-l">Median</div><div class="stat-v">${med}</div><div class="stat-s">middle score</div></div>
+      <div class="stat"><div class="stat-l">Range</div><div class="stat-v">${min}–${max}</div><div class="stat-s">low → high</div></div>
+    </div>
+    <div class="band-legend">
+      <span class="band" style="background:#EAF3DE;color:#3B6D11">⭐ 85–100 Excellent</span>
+      <span class="band" style="background:#E6F1FB;color:#185FA5">👍 71–84 Good</span>
+      <span class="band" style="background:#FAEEDA;color:#854F0B">🙂 51–70 OK</span>
+      <span class="band" style="background:#FCEBEB;color:#A32D2D">⚠️ 0–50 Poor</span>
+    </div>
+    <div class="sec-title">Individual scores (${rs.length} responses)</div>
+    <div class="score-chips">${chips}</div>
+    <div class="sec-title">Question breakdown</div>
+    ${qBars}
+    ${opens?`<div class="sec-title">Open-ended responses (${rs.filter(r=>r.open).length})</div>${opens}`:''}
+    <div style="text-align:center;margin-top:1.5rem;font-size:.75rem;color:var(--muted)">All raw data is also in your Google Sheet. <button class="action-btn" onclick="loadAdmin()" style="display:inline">↺ Refresh</button></div>`;
+}
+</script>
+</body>
+</html>
